@@ -1,0 +1,7 @@
+table,% train applicants covered,default % with,default % without
+bureau,85.7,7.73,10.12
+bureau_balance,30.0,8.14,8.04
+previous_application,94.6,8.19,5.96
+installments_payments,94.8,8.19,5.98
+pos_cash_balance,94.1,8.16,6.66
+credit_card_balance,28.3,8.67,7.84
