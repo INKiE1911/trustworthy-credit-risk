@@ -1,0 +1,32 @@
+project:
+  name: trustworthy-credit-risk
+  seed: 42
+
+paths:            # all relative to the project root
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  figures: reports/figures
+
+data:
+  id_col: SK_ID_CURR
+  target: TARGET
+  tables:         # short name -> CSV file
+    application_train: application_train.csv
+    application_test: application_test.csv
+    bureau: bureau.csv
+    bureau_balance: bureau_balance.csv
+    previous_application: previous_application.csv
+    installments_payments: installments_payments.csv
+    pos_cash_balance: POS_CASH_balance.csv
+    credit_card_balance: credit_card_balance.csv
+
+splits:
+  test_size: 0.20
+  conformal_size: 0.10
+  valid_size: 0.10
+  n_folds: 5
+
+mlflow:
+  db_file: mlflow.db
+  experiment: credit-risk

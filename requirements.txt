@@ -1,0 +1,48 @@
+# core data + ML
+numpy
+pandas
+scipy
+scikit-learn
+pyarrow            # fast parquet files for processed features
+matplotlib
+seaborn
+tqdm
+pyyaml             # for configs/config.yaml
+
+# boosting
+lightgbm
+xgboost-cpu        # same "import xgboost", CPU-only and much smaller
+
+# imbalance, tuning, statistics
+imbalanced-learn   # SMOTE inside pipelines
+optuna             # Bayesian optimisation (TPE)
+statsmodels        # McNemar test
+mlxtend            # 5x2cv paired t-test
+
+# unsupervised (t-SNE, K-means, GMM, DBSCAN, HDBSCAN are already in scikit-learn)
+umap-learn
+
+# explainability + fairness
+shap
+lime
+fairlearn
+interpret-core     # EBM glass-box model (stretch goal)
+
+# experiment tracking
+mlflow
+
+# app
+fastapi
+uvicorn[standard]
+streamlit
+httpx              # needed for FastAPI's TestClient in your tests
+
+# notebooks inside VS Code
+ipykernel
+
+# data download
+kaggle
+
+# dev tools
+pytest
+ruff
