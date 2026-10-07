@@ -1,7 +1,7 @@
 # Shortcuts. Run from the project root, for example:  make test
 # The lines under each target MUST start with a Tab, not spaces.
 
-.PHONY: data parquet parquet-force test lint format mlflow
+.PHONY: data parquet parquet-force splits test lint format mlflow
 
 data:
 	mkdir -p data/raw
@@ -13,6 +13,9 @@ parquet:
 
 parquet-force:
 	.venv/bin/python -m creditrisk.data.to_parquet --force
+
+splits:
+	.venv/bin/python -m creditrisk.data.split
 
 test:
 	.venv/bin/pytest -q
