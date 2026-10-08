@@ -1,6 +1,7 @@
 """Preprocessing pipelines. They are fitted inside each CV fold, so nothing leaks."""
 
 import numpy as np
+import pandas as pd
 import sklearn
 from sklearn.base import BaseEstimator, OneToOneFeatureMixin, TransformerMixin
 from sklearn.compose import ColumnTransformer
@@ -72,5 +73,53 @@ def make_tree_preprocessor(numeric, categorical) -> ColumnTransformer:
                            encoded_missing_value=-2)
     return ColumnTransformer(
         [("num", "passthrough", list(numeric)), ("cat", codes, list(categorical))],
+        remainder="drop",
+    )
+
+
+# --- column pickers that look at the data at fit time (used after feature selection) ---
+def numeric_columns(X) -> list:
+    return [c for c in X.columns if not isinstance(X[c].dtype, pd.CategoricalDtype)]
+
+
+def small_text_columns(X, max_onehot: int = 10) -> list:
+    return [c for c in X.columns if isinstance(X[c].dtype, pd.CategoricalDtype)
+            and len(X[c].cat.categories) <= max_onehot]
+
+
+def large_text_columns(X, max_onehot: int = 10) -> list:
+    return [c for c in X.columns if isinstance(X[c].dtype, pd.CategoricalDtype)
+            and len(X[c].cat.categories) > max_onehot]
+
+
+def text_columns(X) -> list:
+    return [c for c in X.columns if isinstance(X[c].dtype, pd.CategoricalDtype)]
+
+
+def make_linear_preprocessor_auto(seed: int = 42) -> ColumnTransformer:
+    """Same as make_linear_preprocessor, but finds the column types itself at fit time.
+
+    Use it after a feature-selection step, when the kept columns are only known during fit.
+    """
+    numbers = Pipeline([
+        ("clip", QuantileClipper()),
+        ("impute", SimpleImputer(strategy="median", add_indicator=True)),
+        ("scale", StandardScaler()),
+    ])
+    large_text = Pipeline([("target", make_target_encoder(seed)), ("scale", StandardScaler())])
+    return ColumnTransformer(
+        [("num", numbers, numeric_columns),
+         ("low", OneHotEncoder(handle_unknown="ignore", sparse_output=False), small_text_columns),
+         ("high", large_text, large_text_columns)],
+        remainder="drop",
+    )
+
+
+def make_tree_preprocessor_auto() -> ColumnTransformer:
+    """Same as make_tree_preprocessor, but finds the column types itself at fit time."""
+    codes = OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1,
+                           encoded_missing_value=-2)
+    return ColumnTransformer(
+        [("num", "passthrough", numeric_columns), ("cat", codes, text_columns)],
         remainder="drop",
     )

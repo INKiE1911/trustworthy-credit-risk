@@ -35,3 +35,24 @@ def test_results_table_sorted_best_first():
     bad = run_cv(LogisticRegression, X[["noise"]], y, folds, name="bad", n_boot=20, log=False)
     table = results_table([bad, good])
     assert list(table.index) == ["good", "bad"]
+
+
+def test_run_or_load_reuses_saved_predictions(tmp_path):
+    from creditrisk.evaluation.cv import load_result, run_or_load
+
+    X, y, folds = _data()
+    ids = np.arange(len(y))
+    calls = []
+
+    def make_model():
+        calls.append(1)
+        return LogisticRegression()
+
+    first = run_or_load(make_model, X, y, folds, "saved", ids=ids, n_boot=20, log=False,
+                        oof_dir=tmp_path)
+    assert len(calls) == 5  # one model per fold
+    again = run_or_load(make_model, X, y, folds, "saved", ids=ids, oof_dir=tmp_path)
+    assert len(calls) == 5  # nothing retrained
+    np.testing.assert_allclose(again.oof, first.oof)
+    reordered = load_result("saved", ids=ids[::-1], oof_dir=tmp_path)
+    np.testing.assert_allclose(reordered.oof, first.oof[::-1])
