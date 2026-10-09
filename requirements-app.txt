@@ -1,0 +1,15 @@
+# Only what the API and the app need (Step 16 Docker image). Versions from requirements.lock.txt.
+fastapi==0.142.2
+joblib==1.6.0
+lightgbm==4.7.0
+matplotlib==3.11.2
+numpy==2.5.3
+pandas==3.0.6
+pyarrow==25.0.1
+pydantic==2.13.5
+PyYAML==6.0.3
+requests==2.34.2
+scikit-learn==1.9.1
+scipy==1.18.1
+streamlit==1.65.0
+uvicorn==0.54.0

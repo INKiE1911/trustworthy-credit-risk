@@ -1,6 +1,7 @@
 """Step 9: the scoring service, demo bundle, API and Streamlit app, all on fake data."""
 
 import importlib.util
+import json
 from pathlib import Path
 
 import numpy as np
@@ -44,6 +45,9 @@ def served(tmp_path_factory):
     folder = tmp_path_factory.mktemp("serving")
     save_final_model(model, columns, {"n_estimators": 60, "cv_roc_auc": 0.5},
                      model_dir=folder / "models")
+    # approve if p < 0.05, decline if p > 0.15, money break-even 1/6 (made-up cut-offs)
+    (folder / "models" / "decision.json").write_text(json.dumps({"threshold": 1 / 6, "conformal": {
+        "q_repay": 0.15, "q_default": 0.95, "approve_below": 0.05, "decline_above": 0.15}}))
     bundle = make_demo_bundle(features, test, n=50, seed=0)
     bundle.to_parquet(folder / "demo.parquet", index=False)
     service = ScoringService(model_dir=folder / "models", demo_path=folder / "demo.parquet")
@@ -153,7 +157,11 @@ def test_api(served, monkeypatch):
     assert ok.status_code == 200
     body = ok.json()
     assert 0 < body["probability"] < 1 and body["changed"] == {"income": 100000.0}
-    assert {"raises_risk", "lowers_risk", "base_probability", "model"} <= set(body)
+    assert {"raises_risk", "lowers_risk", "base_probability", "model", "decision",
+            "reason_codes"} <= set(body)
+    advice = client.get(f"/applicants/{applicant_id}/counterfactuals").json()
+    assert advice["decision"] == service.score(applicant_id).decision.outcome
+    assert client.get("/applicants/1/counterfactuals").status_code == 404
     bad = client.post("/score", json={"applicant_id": applicant_id,
                                       "changes": {"ext_source_1": 1.5}})
     assert bad.status_code == 422
@@ -182,7 +190,10 @@ def test_streamlit_app_runs(served, monkeypatch):
     app.slider(key=f"income_{first}_0").set_value(600_000.0).run()
     assert not app.exception
     assert "points" in app.metric[0].delta  # the what-if score is compared with the original
+    app.button(key=f"cf_{first}").click().run()          # the What-if tab's search
+    assert not app.exception and app.markdown
     st.cache_resource.clear()
+    st.cache_data.clear()
 
 
 def test_reason_codes_are_sentences_for_the_risk_raising_reasons(served):
@@ -208,3 +219,34 @@ def test_counterfactuals_search_the_actionable_fields(served):
             assert r["probability"] < before
             field = "income" if r["option"] == "higher income" else "loan_amount"
             assert r["changes"][field] == pytest.approx(current[field] * r["factor"])
+
+
+def test_decision_follows_the_cutoffs(served):
+    from creditrisk.explain.counterfactual import next_decision
+
+    service, _, _, _ = served
+    seen = set()
+    for applicant_id in service.applicant_ids:
+        result = service.score(applicant_id)
+        p, d = result.probability, result.decision
+        expected = "approve" if p < 0.05 else "decline" if p > 0.15 else "refer"
+        assert d.outcome == expected and d.money_rule == ("approve" if p < 1 / 6 else "decline")
+        assert result.reason_codes == service.reason_codes(result)
+        seen.add(d.outcome)
+    assert len(seen) >= 2                      # the fake cut-offs split the demo applicants
+    for applicant_id in service.applicant_ids[:10]:
+        advice = next_decision(service, applicant_id)
+        if advice["decision"] == "approve":
+            assert advice["goal"] is None and advice["options"] == []
+        else:
+            found = [o for o in advice["options"] if o["factor"] is not None]
+            assert all(o["probability"] < advice["target"] for o in found)
+
+
+def test_synthetic_bundle_has_no_real_applicants():
+    from creditrisk.serving.demo import make_synthetic_bundle
+
+    bundle = make_synthetic_bundle(n=20, seed=3)
+    assert len(bundle) == 20 and bundle["DEMO_SYNTHETIC"].all()
+    assert bundle["SK_ID_CURR"].min() >= 900_000           # outside the real Kaggle id range
+    assert sum(c.startswith(RAW_PREFIX) for c in bundle.columns) == 120

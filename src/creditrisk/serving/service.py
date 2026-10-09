@@ -7,8 +7,11 @@ cross-table features are then rebuilt with exactly the training code; history fe
 
 Reasons come from LightGBM's built-in TreeSHAP (pred_contrib): how much each feature pushes
 the log-odds of default up or down for this applicant. They add up exactly to the model's score.
+The decision uses models/decision.json: the conformal cut-offs (Step 11, approve / refer /
+decline) and the money break-even threshold (Step 10).
 """
 
+import json
 import math
 import os
 from pathlib import Path
@@ -18,12 +21,14 @@ import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field
 
 from creditrisk.config import get_path
+from creditrisk.decision.conformal import decide
 from creditrisk.features.application import application_features_from_raw
 from creditrisk.features.build import add_cross_table_features
-from creditrisk.models.final import load_final_model
+from creditrisk.models.final import MODEL_DIR, load_final_model
 
 RAW_PREFIX = "RAW__"  # raw application columns inside the demo bundle
 DEMO_FILE = "demo_applicants.parquet"
+SYNTHETIC_FILE = "demo_synthetic.parquet"  # made-up applicants for a public demo
 TRAIN_DEFAULT_RATE = 0.0807  # 24,825 of 307,511 training loans (EDA)
 NOT_EMPLOYED = 365243  # the data's code for "no employment record" (mostly pensioners)
 CROSS_TABLE = ["BUR_DEBT_TO_INCOME", "BUR_ANNUITY_BURDEN", "PREV_CURRENT_TO_MEAN_CREDIT"]
@@ -188,6 +193,14 @@ class Reason(BaseModel):
     impact: float = Field(description="Push on the log-odds of default (> 0 raises the risk)")
 
 
+class Decision(BaseModel):
+    outcome: str = Field(description="approve / refer / decline: the conformal layer (Step 11)")
+    money_rule: str = Field(description="approve / decline at the break-even threshold (Step 10)")
+    approve_below: float
+    decline_above: float
+    break_even: float
+
+
 class ScoreResponse(BaseModel):
     applicant_id: int
     probability: float = Field(description="Predicted probability of default (calibrated, Step 10)")
@@ -196,6 +209,9 @@ class ScoreResponse(BaseModel):
     base_probability: float = Field(description="The model's prediction for a typical applicant")
     raises_risk: list[Reason]
     lowers_risk: list[Reason]
+    reason_codes: list[str] = Field(default_factory=list,
+                                    description="The top risk-raising reasons as sentences")
+    decision: Decision
     changed: dict[str, float]
     model: str
 
@@ -217,12 +233,16 @@ class ScoringService:
         if not demo_path.exists():
             raise FileNotFoundError(f"{demo_path} not found. Run `make demo-data` first.")
         self.model, self.details = load_final_model(model_dir)
+        decision = json.loads((Path(model_dir or MODEL_DIR) / "decision.json").read_text())
+        self.cutoffs = decision["conformal"]
+        self.break_even = decision["threshold"]
         self.columns = list(self.details["features"])
         bundle = pd.read_parquet(demo_path).set_index("SK_ID_CURR")
         raw_columns = [c for c in bundle.columns if c.startswith(RAW_PREFIX)]
         self.raw = bundle[raw_columns].rename(columns=lambda c: c[len(RAW_PREFIX):])
         self.features = bundle.drop(columns=raw_columns)
         self.applicant_ids = [int(i) for i in bundle.index]
+        self.synthetic = bool(bundle.get("DEMO_SYNTHETIC", pd.Series([False])).any())
         self.model_name = (f"LightGBM, {self.details.get('n_estimators')} trees, "
                            f"5-fold CV ROC-AUC {self.details.get('cv_roc_auc')}")
 
@@ -265,7 +285,7 @@ class ScoringService:
         contributions = np.asarray(self.model.predict(X, pred_contrib=True))[0]
         impacts, base = contributions[:-1], float(contributions[-1])
         order = np.argsort(impacts)
-        return ScoreResponse(
+        response = ScoreResponse(
             applicant_id=applicant_id,
             probability=round(probability, 6),
             times_average=round(probability / TRAIN_DEFAULT_RATE, 3),
@@ -274,9 +294,20 @@ class ScoringService:
             raises_risk=[self._reason(X, j, impacts[j]) for j in order[::-1][:top]
                          if impacts[j] > 0],
             lowers_risk=[self._reason(X, j, impacts[j]) for j in order[:top] if impacts[j] < 0],
+            decision=self.decide(probability),
             changed=changes.model_dump(exclude_none=True),
             model=self.model_name,
         )
+        response.reason_codes = self.reason_codes(response, top)
+        return response
+
+    def decide(self, probability: float) -> Decision:
+        cut = self.cutoffs
+        return Decision(
+            outcome=str(decide([probability], cut["q_repay"], cut["q_default"])[0]),
+            money_rule="approve" if probability < self.break_even else "decline",
+            approve_below=round(cut["approve_below"], 4),
+            decline_above=round(cut["decline_above"], 4), break_even=round(self.break_even, 4))
 
     @staticmethod
     def reason_codes(result: ScoreResponse, top: int = 4) -> list[str]:

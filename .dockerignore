@@ -1,0 +1,12 @@
+# Allow-list: only these go into the image. Never the data/ folder (real Kaggle rows).
+*
+!requirements-app.txt
+!pyproject.toml
+!configs/
+!src/
+!app/
+!models/lightgbm_final.joblib
+!models/lightgbm_final.json
+!models/decision.json
+!demo/demo_synthetic.parquet
+**/__pycache__

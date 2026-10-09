@@ -6,8 +6,9 @@ Ustun et al. 2019). Every candidate goes through ScoringService.build_features, 
 cross-table features are rebuilt with the training code. A library like DiCE would instead change
 the 240 model inputs directly (for example "BUR_DEBT_TO_INCOME"), which nobody can act on.
 
-    from creditrisk.explain.counterfactual import counterfactuals
+    from creditrisk.explain.counterfactual import counterfactuals, next_decision
     counterfactuals(service, applicant_id, target=0.0355)   # target: probability to get below
+    next_decision(service, applicant_id)    # aims at the next better decision (used by the app)
 """
 
 from pydantic import ValidationError
@@ -54,3 +55,14 @@ def counterfactuals(service: ScoringService, applicant_id: int, target: float) -
                 break
         found.append(result)
     return found
+
+
+def next_decision(service: ScoringService, applicant_id: int) -> dict:
+    """Counterfactuals towards the next better decision: decline -> refer, refer -> approve."""
+    result = service.score(applicant_id)
+    outcome = result.decision.outcome
+    target = {"decline": result.decision.decline_above,
+              "refer": result.decision.approve_below}.get(outcome)
+    return {"decision": outcome, "goal": {"decline": "refer", "refer": "approve"}.get(outcome),
+            "target": target,
+            "options": [] if target is None else counterfactuals(service, applicant_id, target)}

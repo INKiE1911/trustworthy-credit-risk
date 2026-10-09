@@ -1,0 +1,14 @@
+# App + API from the same image. The app sends every request to the API.
+#   docker compose up --build     ->  app http://localhost:8501, API http://localhost:8000/docs
+services:
+  api:
+    build: .
+    image: creditrisk-demo
+    command: uvicorn creditrisk.serving.api:app --host 0.0.0.0 --port 8000
+    ports: ["8000:8000"]
+  app:
+    image: creditrisk-demo
+    environment:
+      SCORING_API_URL: http://api:8000
+    ports: ["8501:8501"]
+    depends_on: [api]

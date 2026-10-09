@@ -6,7 +6,7 @@ An end-to-end loan-default model on the **Home Credit Default Risk** data (307,5
 applications, 7 linked tables), built to be accurate *and* honest: every number comes with a
 confidence interval, and the system explains each score. PRML course project, IIT Dharwad (2026).
 
-> **Status:** work in progress (Step 15 of 18). The models are final: the 20% test split was
+> **Status:** work in progress (Step 16 of 18). The models are final: the 20% test split was
 > opened once, in Step 15, and nothing changed after it.
 
 ![The demo app](reports/figures/app_screenshot.png)
@@ -92,6 +92,10 @@ ladder used the features from before a small fix (it moved LightGBM by +0.001).
   (0.902 for both classes) and the fairness gaps all repeat their validation values. One thing
   got worse: by age, the approval ratio is 0.796, just under the "80% rule". More data would
   still help LightGBM (its learning curve is still rising) but not logistic regression.
+- **Drift is watched, not guessed:** a PSI monitor stays at ≤ 0.002 between our own splits.
+  For the later Kaggle test file the score is stable (0.008), but one key input shifted hard:
+  loans got shorter (annuity ÷ loan amount, PSI 0.997). In a simulation, lowering everyone's
+  external scores by 20% trips the score alarm (0.254) and cuts auto-approvals from 44% to 25%.
 - **Bugs caught by checking the data:** counting split payments row by row said 67% of
   installments were underpaid (per installment it was 0%), and a "365243" date code had
   quietly emptied two features.
@@ -99,10 +103,18 @@ ladder used the features from before a small fix (it moved LightGBM by +0.001).
 ## The demo app
 
 The model uses 240 features, mostly from loan history, so nobody can type them in. The app
-picks **real applicants from the Kaggle test file** (no outcome is known for them), shows the
-default probability and the strongest reasons, and lets you change 8 key fields (income, loan
-amount, annuity, age, years employed, three external credit scores) to see what happens. The
-features are rebuilt with exactly the training code; the reasons are TreeSHAP values.
+picks an applicant and has three tabs:
+
+- **Score + why:** the default probability and the strongest reasons (TreeSHAP values).
+- **Decision:** approve, refer to a person, or decline (the conformal layer), the money rule's
+  suggestion for referred cases, and the reasons as sentences.
+- **What-if:** change 8 key fields (income, loan amount, annuity, age, years employed, three
+  external scores) in the sidebar, or let the model find the smallest smaller-loan or
+  higher-income change that reaches the next better decision.
+
+Features are rebuilt with exactly the training code. Locally the applicants are **real
+applicants from the Kaggle test file** (no outcome is known). The Docker image uses **made-up
+applicants** instead, because the competition rules forbid sharing the data.
 
 ```bash
 make app     # Streamlit page at http://localhost:8501 (builds the demo data on first run)
@@ -113,10 +125,11 @@ make api     # FastAPI service at http://localhost:8000 (interactive docs at /do
 curl "localhost:8000/applicants?limit=3"                       # some demo applicant ids
 curl -X POST localhost:8000/score -H "Content-Type: application/json" \
      -d '{"applicant_id": <an id from above>, "changes": {"income": 250000}}'
+curl localhost:8000/applicants/<id>/counterfactuals            # smallest change to a better decision
 ```
 
-The response has the probability, how it compares with the average applicant (8.1%), and the
-top 4 reasons pushing the risk up and down. Input is validated (for example, external scores
+The response has the probability, how it compares with the average applicant (8.1%), the
+decision, the reason codes and the top 4 reasons pushing the risk up and down. Input is validated (for example, external scores
 must be between 0 and 1). The probabilities are calibrated: Platt and isotonic scaling did not
 improve them (Step 10).
 
@@ -126,10 +139,12 @@ improve them (Step 10).
 7 CSV tables -> Parquet -> 240 features (one row per applicant, leak-free aggregates)
              -> frozen splits (train 60 / valid 10 / conformal 10 / test 20, 5 CV folds)
              -> one CV runner for every model (bootstrap CIs, paired tests, MLflow)
-             -> model ladder -> experiments -> tuned LightGBM -> API + app
+             -> model ladder -> experiments -> tuned LightGBM
+             -> calibration check + money threshold -> conformal approve / refer / decline
+             -> SHAP reasons, counterfactuals, fairness audit -> API + app (Docker) + PSI monitor
 ```
 
-**Still to come:** app v2 (decision, reasons, what-if), Docker and drift monitoring.
+**Still to come:** the report and the slides.
 
 ## Run it yourself
 
@@ -155,18 +170,21 @@ the final model to `models/`). Then `make app`.
 | `make test` | Run the tests |
 | `make lint` | Check the code |
 | `make mlflow` | Open the experiment dashboard |
-| `make demo-data` | Rebuild the app's demo applicants |
+| `make demo-data` | Rebuild the app's demo applicants (real, local only) |
+| `make docker` | Build the image (final model + made-up applicants) |
+| `docker compose up` | Run the app (port 8501) and the API (port 8000) together |
 
 ## Project layout
 
 ```
 src/creditrisk/   data/  features/  models/  evaluation/  scratch/  serving/
-                  decision/  explain/  fairness/
+                  decision/  explain/  fairness/  monitoring/
 app/              the Streamlit page
-notebooks/        01-13, one per step, each ending with key facts and findings
+demo/             made-up demo applicants (safe to share)
+notebooks/        01-14, one per step, each ending with key facts and findings
 tests/            unit tests, including every scratch algorithm vs scikit-learn
 reports/          result tables, figures, model card, datasheet
 ```
 
 **Tech:** Python, pandas, scikit-learn, LightGBM, XGBoost, PyTorch, Optuna, MLflow, FastAPI,
-Pydantic, Streamlit, LIME, Fairlearn.
+Pydantic, Streamlit, Docker, LIME, Fairlearn.

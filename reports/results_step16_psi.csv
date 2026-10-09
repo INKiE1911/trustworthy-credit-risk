@@ -1,0 +1,39 @@
+compared with train,what,PSI,status,kind
+Kaggle test file,score (probability of default),0.00833020130677338,stable,real
+Kaggle test file,Annuity ÷ loan amount (repayment speed) (APP_ANNUITY_TO_CREDIT),0.9967956329957073,shift,real
+Kaggle test file,Contract type (APP_NAME_CONTRACT_TYPE),0.2143400321563514,watch,real
+Kaggle test file,Goods price ÷ loan amount (APP_GOODS_TO_CREDIT),0.0747716999933119,stable,real
+Kaggle test file,POS / cash loans: future installments total (POS_FUTURE_INSTALLMENTS_TOTAL),0.058776577756151055,stable,real
+Kaggle test file,Previous applications: annuity mean (PREV_ANNUITY_MEAN),0.04267189789574858,stable,real
+Kaggle test file,Previous applications: total cost mean (PREV_TOTAL_COST_MEAN),0.0368569808677592,stable,real
+Kaggle test file,Loan amount above the goods price (APP_CREDIT_MINUS_GOODS),0.03556914770693974,stable,real
+Kaggle test file,Loan annuity (APP_AMT_ANNUITY),0.03291001630116717,stable,real
+Kaggle test file,Income (APP_AMT_INCOME_TOTAL),0.020076959935775053,stable,real
+Kaggle test file,Credit bureau: active ends in years (BUR_ACTIVE_ENDS_IN_YEARS),0.017439772020985223,stable,real
+Kaggle test file,External credit scores (lowest) (APP_EXT_MIN),0.015802677877158253,stable,real
+Kaggle test file,External credit scores (average) (APP_EXT_MEAN),0.011414717105287353,stable,real
+Kaggle test file,External credit score 3 (APP_EXT_SOURCE_3),0.007436292280940988,stable,real
+Kaggle test file,Employer type (APP_ORGANIZATION_TYPE),0.005771565817597105,stable,real
+Kaggle test file,External credit scores (highest) (APP_EXT_MAX),0.005005727335989667,stable,real
+Kaggle test file,Occupation (APP_OCCUPATION_TYPE),0.0019523559341878389,stable,real
+Kaggle test file,Education (APP_NAME_EDUCATION_TYPE),0.0017928472094460757,stable,real
+validation,score (probability of default),0.0004954487812375101,stable,real
+validation,Employer type (APP_ORGANIZATION_TYPE),0.0023367489367749406,stable,real
+validation,Occupation (APP_OCCUPATION_TYPE),0.0008425752179626966,stable,real
+validation,Annuity ÷ loan amount (repayment speed) (APP_ANNUITY_TO_CREDIT),0.0006420058152382324,stable,real
+validation,Loan amount above the goods price (APP_CREDIT_MINUS_GOODS),0.0006191230025723041,stable,real
+validation,Previous applications: annuity mean (PREV_ANNUITY_MEAN),0.0005532636262299824,stable,real
+validation,External credit scores (highest) (APP_EXT_MAX),0.0004923398434405185,stable,real
+validation,External credit score 3 (APP_EXT_SOURCE_3),0.00048401045824825607,stable,real
+validation,Loan annuity (APP_AMT_ANNUITY),0.0004019956395988566,stable,real
+validation,External credit scores (average) (APP_EXT_MEAN),0.00037853410452720653,stable,real
+validation,External credit scores (lowest) (APP_EXT_MIN),0.00034383596778416126,stable,real
+validation,Credit bureau: active ends in years (BUR_ACTIVE_ENDS_IN_YEARS),0.00032511370641819285,stable,real
+validation,Income (APP_AMT_INCOME_TOTAL),0.0002087981034239602,stable,real
+validation,Previous applications: total cost mean (PREV_TOTAL_COST_MEAN),0.0001777587334823984,stable,real
+validation,Goods price ÷ loan amount (APP_GOODS_TO_CREDIT),0.0001439426081900391,stable,real
+validation,Contract type (APP_NAME_CONTRACT_TYPE),0.00012958311498659895,stable,real
+validation,Education (APP_NAME_EDUCATION_TYPE),0.00010691125241042944,stable,real
+validation,POS / cash loans: future installments total (POS_FUTURE_INSTALLMENTS_TOTAL),7.007118324891742e-05,stable,real
+income 20% lower,"score (simulated, demo applicants)",0.003074365304326977,stable,simulated
+external scores 20% lower,"score (simulated, demo applicants)",0.254202078464255,shift,simulated

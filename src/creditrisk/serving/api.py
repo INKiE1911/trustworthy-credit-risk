@@ -1,9 +1,13 @@
 """The FastAPI service. Run `make api`, then open http://localhost:8000/docs to try it.
 
 POST /score              {"applicant_id": <id>, "changes": {"income": 250000}}
-                         -> probability of default, vs the average, top reasons both ways
+                         -> probability of default, decision (approve / refer / decline),
+                            reason codes, top reasons both ways
 GET  /applicants         demo applicant ids
 GET  /applicants/{id}    the applicant's current values for the 8 what-if fields
+GET  /applicants/{id}/counterfactuals
+                         the smallest smaller-loan / higher-income change that reaches the
+                         next better decision (decline -> refer -> approve)
 GET  /health             is the model loaded?
 """
 
@@ -11,6 +15,7 @@ from functools import lru_cache
 
 from fastapi import FastAPI, HTTPException, Query
 
+from creditrisk.explain.counterfactual import next_decision
 from creditrisk.serving.service import (
     ImpossibleChange,
     Profile,
@@ -22,9 +27,10 @@ from creditrisk.serving.service import (
 
 app = FastAPI(
     title="Trustworthy credit risk API",
-    version="0.1.0",
-    description="Default probability and reasons for real (unlabelled) Home Credit applicants. "
-                "Probabilities are calibrated (checked in Step 10).",
+    version="0.2.0",
+    description="Default probability, decision and reasons for demo Home Credit applicants. "
+                "Probabilities are calibrated (Step 10); approve / refer / decline comes from "
+                "the conformal layer (Step 11).",
 )
 
 
@@ -38,7 +44,7 @@ def get_service() -> ScoringService:
 def health() -> dict:
     service = get_service()
     return {"status": "ok", "model": service.model_name,
-            "applicants": len(service.applicant_ids)}
+            "applicants": len(service.applicant_ids), "synthetic": service.synthetic}
 
 
 @app.get("/applicants")
@@ -51,6 +57,14 @@ def applicants(limit: int = Query(50, ge=1, le=5000)) -> dict:
 def applicant(applicant_id: int) -> Profile:
     try:
         return get_service().profile(applicant_id)
+    except UnknownApplicant:
+        raise HTTPException(status_code=404, detail=f"Unknown applicant {applicant_id}") from None
+
+
+@app.get("/applicants/{applicant_id}/counterfactuals")
+def counterfactual(applicant_id: int) -> dict:
+    try:
+        return next_decision(get_service(), applicant_id)
     except UnknownApplicant:
         raise HTTPException(status_code=404, detail=f"Unknown applicant {applicant_id}") from None
 
