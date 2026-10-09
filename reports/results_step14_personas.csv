@@ -1,0 +1,4 @@
+persona,applicants,default rate,mean predicted,top reasons (mean SHAP)
+1,1637,0.3103237629810629,0.3089753789731961,External credit scores (average) (+0.42); External credit scores (lowest) (+0.31); External credit scores (highest) (+0.24)
+0,652,0.3006134969325153,0.294131282132752,Credit cards: util latest mean (+0.37); External credit scores (average) (+0.22); External credit scores (highest) (+0.16)
+2,1608,0.2543532338308458,0.2460691541831557,External credit scores (average) (+0.19); External credit scores (highest) (+0.13); Annuity ÷ loan amount (repayment speed) (+0.10)

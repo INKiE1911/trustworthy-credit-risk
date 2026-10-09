@@ -6,7 +6,7 @@ An end-to-end loan-default model on the **Home Credit Default Risk** data (307,5
 applications, 7 linked tables), built to be accurate *and* honest: every number comes with a
 confidence interval, and the system explains each score. PRML course project, IIT Dharwad (2026).
 
-> **Status:** work in progress (Step 13 of 18). All numbers below are 5-fold cross-validation
+> **Status:** work in progress (Step 14 of 18). All numbers below are 5-fold cross-validation
 > on the 60% training split. The 20% test split stays locked until the final evaluation.
 
 ![The demo app](reports/figures/app_screenshot.png)
@@ -69,6 +69,10 @@ ladder used the features from before a small fix (it moved LightGBM by +0.001).
   sense at once (shown with the real numbers). Reweighing cuts the gender gap from 4.3 to 1.7
   points for 0.1% of profit, at the cost of calibration within gender. See the
   [model card](reports/model_card.md) and [datasheet](reports/datasheet.md).
+- **Clusters describe, they don't score:** applicants form one blob (best silhouette 0.19), and
+  "the default rate of my cluster" ranks risk at ROC-AUC 0.50–0.55 for K-means, GMM, Ward and
+  HDBSCAN. Clustering the declined applicants by their **SHAP values** works better: three risk
+  personas (low external scores, a maxed-out credit card, borderline), each with its own story.
 - **Bugs caught by checking the data:** counting split payments row by row said 67% of
   installments were underpaid (per installment it was 0%), and a "365243" date code had
   quietly emptied two features.
@@ -106,7 +110,7 @@ improve them (Step 10).
              -> model ladder -> experiments -> tuned LightGBM -> API + app
 ```
 
-**Still to come:** clustering, the one-time test-set evaluation, Docker and drift monitoring.
+**Still to come:** the one-time test-set evaluation, Docker and drift monitoring.
 
 ## Run it yourself
 
@@ -140,7 +144,7 @@ the final model to `models/`). Then `make app`.
 src/creditrisk/   data/  features/  models/  evaluation/  scratch/  serving/
                   decision/  explain/  fairness/
 app/              the Streamlit page
-notebooks/        01-11, one per step, each ending with key facts and findings
+notebooks/        01-12, one per step, each ending with key facts and findings
 tests/            unit tests, including every scratch algorithm vs scikit-learn
 reports/          result tables, figures, model card, datasheet
 ```
