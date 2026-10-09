@@ -152,15 +152,16 @@ def test_installments_combines_split_payments(installments):
 # ---------------------------------------------------------------- POS_CASH_balance
 def test_pos_features():
     pos = pd.DataFrame({
-        "SK_ID_PREV": [1, 1, 1, 2, 2],
-        "SK_ID_CURR": [1, 1, 1, 1, 1],
-        "MONTHS_BALANCE": [-3, -2, -1, -20, -1],
-        "CNT_INSTALMENT": [12.0, 12.0, 12.0, 6.0, 8.0],  # loan 2's length changed
-        "CNT_INSTALMENT_FUTURE": [2.0, 1.0, 0.0, 5.0, 3.0],
+        "SK_ID_PREV": [1, 1, 1, 2, 2, 3],
+        "SK_ID_CURR": [1, 1, 1, 1, 1, 2],
+        "MONTHS_BALANCE": [-3, -2, -1, -20, -1, -1],
+        # loan 2's length changed; loan 3 never has a length
+        "CNT_INSTALMENT": [12.0, 12.0, 12.0, 6.0, 8.0, NAN],
+        "CNT_INSTALMENT_FUTURE": [2.0, 1.0, 0.0, 5.0, 3.0, NAN],
         "NAME_CONTRACT_STATUS": pd.Categorical(["Active", "Active", "Completed", "Demand",
-                                                "Active"]),
-        "SK_DPD": [0, 10, 0, 0, 0],
-        "SK_DPD_DEF": [0, 10, 0, 0, 0],
+                                                "Active", "Active"]),
+        "SK_DPD": [0, 10, 0, 0, 0, 0],
+        "SK_DPD_DEF": [0, 10, 0, 0, 0, 0],
     })
     f = build_pos_features(pos)
     assert f.loc[1, "POS_LOANS"] == 2 and f.loc[1, "POS_DPD_MAX"] == 10
@@ -169,6 +170,7 @@ def test_pos_features():
     assert f.loc[1, "POS_COMPLETED_SHARE"] == pytest.approx(0.5)
     assert f.loc[1, "POS_DEMAND_COUNT"] == 1 and f.loc[1, "POS_TERM_CHANGES_TOTAL"] == 1
     assert f.loc[1, "POS_ACTIVE_LOANS"] == 1  # loan 1 is completed in its latest month
+    assert f.loc[2, "POS_TERM_CHANGES_TOTAL"] == 0  # not -1
     assert f.loc[1, "POS_FUTURE_INSTALLMENTS_TOTAL"] == pytest.approx(3)
 
 

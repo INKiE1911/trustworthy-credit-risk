@@ -25,12 +25,7 @@ from xgboost import XGBClassifier
 
 from creditrisk.models import baselines
 from creditrisk.models.baselines import default_threads
-from creditrisk.models.preprocess import (
-    make_linear_preprocessor,
-    make_linear_preprocessor_auto,
-    make_tree_preprocessor,
-    make_tree_preprocessor_auto,
-)
+from creditrisk.models.preprocess import make_linear_preprocessor, make_tree_preprocessor
 from creditrisk.models.transformers import DropUninformativeColumns, LightGBMSelector, WoEEncoder
 
 
@@ -54,7 +49,7 @@ def knn(seed: int = 42, k_features: int = 60, n_components: int = 20,
     """KNN on PCA components of the top features (distances need few, scaled dimensions)."""
     return Pipeline([
         ("select", LightGBMSelector(k=k_features, seed=seed)),
-        ("prep", make_linear_preprocessor_auto(seed)),
+        ("prep", make_linear_preprocessor(seed=seed)),
         ("pca", PCA(n_components=n_components, random_state=seed)),
         ("model", KNeighborsClassifier(n_neighbors=n_neighbors, n_jobs=default_threads())),
     ])
@@ -65,7 +60,7 @@ def svm_linear(seed: int = 42, k_features: int = 100, C: float = 0.05) -> Pipeli
     svm = LinearSVC(C=C, dual="auto", max_iter=3000, random_state=seed)
     return Pipeline([
         ("select", LightGBMSelector(k=k_features, seed=seed)),
-        ("prep", make_linear_preprocessor_auto(seed)),
+        ("prep", make_linear_preprocessor(seed=seed)),
         ("model", CalibratedClassifierCV(svm, method="sigmoid", cv=3)),
     ])
 
@@ -76,7 +71,7 @@ def svm_rbf(seed: int = 42, k_features: int = 50, n_components: int = 300,
     svm = LinearSVC(C=C, dual="auto", max_iter=3000, random_state=seed)
     return Pipeline([
         ("select", LightGBMSelector(k=k_features, seed=seed)),
-        ("prep", make_linear_preprocessor_auto(seed)),
+        ("prep", make_linear_preprocessor(seed=seed)),
         ("rbf", Nystroem(kernel="rbf", n_components=n_components, random_state=seed)),
         ("model", CalibratedClassifierCV(svm, method="sigmoid", cv=3)),
     ])
@@ -97,7 +92,7 @@ def adaboost(seed: int = 42, k_features: int = 50, n_estimators: int = 100) -> P
     """The first boosting method: decision stumps, each one focusing on earlier mistakes."""
     return Pipeline([
         ("select", LightGBMSelector(k=k_features, seed=seed)),
-        ("prep", make_tree_preprocessor_auto()),
+        ("prep", make_tree_preprocessor()),
         ("impute", SimpleImputer(strategy="median")),
         ("model", AdaBoostClassifier(estimator=DecisionTreeClassifier(max_depth=1),
                                      n_estimators=n_estimators, learning_rate=0.5,

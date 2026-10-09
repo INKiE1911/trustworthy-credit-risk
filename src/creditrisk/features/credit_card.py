@@ -48,7 +48,7 @@ def build_credit_card_features(cc: pd.DataFrame) -> pd.DataFrame:
         "cash_share_mean": g["cash_share"].mean(),
         "dpd_max": g["dpd"].max(),
         "dpd_months": g["has_dpd"].sum(),
-        "limit_changes": g["limit"].nunique() - 1,
+        "limit_changes": (g["limit"].nunique() - 1).clip(lower=0),  # all-NaN card: 0
         "drawn_total": g["drawn"].sum(),
     })
     latest = c.loc[g["month"].idxmax()].set_index(keys)

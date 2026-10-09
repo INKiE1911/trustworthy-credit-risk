@@ -16,11 +16,6 @@ xgboost-cpu        # same "import xgboost", CPU-only and much smaller
 # imbalance, tuning, statistics
 imbalanced-learn   # SMOTE inside pipelines
 optuna             # Bayesian optimisation (TPE)
-statsmodels        # McNemar test
-mlxtend            # 5x2cv paired t-test
-
-# unsupervised (t-SNE, K-means, GMM, DBSCAN, HDBSCAN are already in scikit-learn)
-umap-learn
 
 # explainability + fairness
 shap

@@ -28,7 +28,7 @@ def build_pos_features(pos: pd.DataFrame) -> pd.DataFrame:
         "dpd_12m_max": g["dpd_12m"].max(),
         "ever_completed": g["completed"].max(),
         "demand": g["demand"].max(),
-        "term_changes": g["CNT_INSTALMENT"].nunique() - 1,
+        "term_changes": (g["CNT_INSTALMENT"].nunique() - 1).clip(lower=0),  # all-NaN loan: 0
     })
     latest = p.loc[g["MONTHS_BALANCE"].idxmax()].set_index(keys)  # each loan's latest month
     loans["future_installments"] = latest["CNT_INSTALMENT_FUTURE"]

@@ -6,6 +6,8 @@ The cleaning rules come from the Step 2 EDA decisions.
 import numpy as np
 import pandas as pd
 
+from creditrisk.features.common import safe_divide as _safe_divide
+
 # 18 near-constant columns found in EDA (one value in more than 99% of rows)
 NEAR_CONSTANT = ["FLAG_MOBIL", "FLAG_CONT_MOBILE"] + [
     f"FLAG_DOCUMENT_{i}" for i in (2, 4, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21)
@@ -25,11 +27,6 @@ DAYS_TO_YEARS = {
 KEY_COLS = ["SK_ID_CURR", "TARGET", "is_test"]
 # Kept in the table for fairness audits, but NOT used as a model input by default
 SENSITIVE = ["APP_CODE_GENDER"]
-
-
-def _safe_divide(a: pd.Series, b: pd.Series) -> pd.Series:
-    """a / b, with division by zero turned into NaN instead of inf."""
-    return (a / b).replace([np.inf, -np.inf], np.nan)
 
 
 def build_application_features(train: pd.DataFrame, test: pd.DataFrame) -> pd.DataFrame:

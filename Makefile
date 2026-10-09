@@ -38,7 +38,7 @@ mlflow:
 demo-data:
 	.venv/bin/python -m creditrisk.serving.demo
 
-$(DEMO):
+$(DEMO): data/processed/features.parquet models/lightgbm_final.json  # rebuild when either changes
 	.venv/bin/python -m creditrisk.serving.demo
 
 api: $(DEMO)

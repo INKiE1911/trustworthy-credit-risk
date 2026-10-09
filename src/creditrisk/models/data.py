@@ -2,9 +2,7 @@
 
 import pandas as pd
 
-from creditrisk.features.application import SENSITIVE
-
-KEY_COLS = ["SK_ID_CURR", "TARGET", "is_test"]
+from creditrisk.features.application import KEY_COLS, SENSITIVE
 
 
 def get_xy(features: pd.DataFrame, splits: pd.DataFrame, split: str = "train",

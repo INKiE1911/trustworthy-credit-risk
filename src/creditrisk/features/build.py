@@ -15,11 +15,10 @@ import pandas as pd
 from creditrisk.config import get_path
 from creditrisk.data.to_parquet import memory_mb, shrink
 from creditrisk.features import bureau, credit_card, installments, pos_cash, previous
-from creditrisk.features.application import build_application_features
+from creditrisk.features.application import KEY_COLS, build_application_features
 from creditrisk.features.common import attach, safe_divide
 
 FEATURE_FILE = "features.parquet"
-KEY_COLS = ["SK_ID_CURR", "TARGET", "is_test"]
 PREFIXES = ["APP_", "BUR_", "BB_", "PREV_", "INST_", "POS_", "CC_"]
 
 

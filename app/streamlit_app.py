@@ -14,7 +14,7 @@ import pandas as pd
 import requests
 import streamlit as st
 
-from creditrisk.serving.service import Changes, ScoringService, format_value
+from creditrisk.serving.service import Changes, ImpossibleChange, ScoringService, format_value
 
 API_URL = os.environ.get("SCORING_API_URL", "").rstrip("/")
 
@@ -49,7 +49,7 @@ def get_score(applicant_id: int, changes: dict) -> dict:
         response = requests.post(f"{API_URL}/score", timeout=30,
                                  json={"applicant_id": applicant_id, "changes": changes})
         if response.status_code == 422:
-            raise ValueError(str(response.json().get("detail")))
+            raise ImpossibleChange(str(response.json().get("detail")))
         response.raise_for_status()
         return response.json()
     return get_service().score(applicant_id, Changes(**changes)).model_dump()
@@ -107,7 +107,7 @@ st.title("🏦 Credit risk demo")
 try:
     original = get_score(applicant_id, {})
     result = get_score(applicant_id, changes) if changes else original
-except ValueError as error:
+except ImpossibleChange as error:
     st.error(f"These values are not possible: {error}")
     st.stop()
 

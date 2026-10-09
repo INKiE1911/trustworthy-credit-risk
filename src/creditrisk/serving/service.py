@@ -153,6 +153,14 @@ def _cast_like(new: pd.Series, old: pd.Series) -> pd.Series:
         return new.astype("float64")
 
 
+class UnknownApplicant(KeyError):
+    """The applicant id is not in the demo bundle."""
+
+
+class ImpossibleChange(ValueError):
+    """The what-if values contradict each other (e.g. employed longer than possible)."""
+
+
 class Changes(BaseModel):
     """What-if values. Leave a field out to keep the applicant's own value."""
 
@@ -220,7 +228,7 @@ class ScoringService:
 
     def _rows(self, applicant_id: int) -> tuple[pd.DataFrame, pd.DataFrame]:
         if applicant_id not in self.features.index:
-            raise KeyError(f"Unknown applicant {applicant_id}")
+            raise UnknownApplicant(f"Unknown applicant {applicant_id}")
         return self.raw.loc[[applicant_id]].copy(), self.features.loc[[applicant_id]].copy()
 
     def build_features(self, applicant_id: int, changes: Changes | None = None) -> pd.DataFrame:
@@ -235,7 +243,7 @@ class ScoringService:
             age = -float(raw["DAYS_BIRTH"].iloc[0]) / 365.25
             employed = float(raw["DAYS_EMPLOYED"].iloc[0])
             if employed != NOT_EMPLOYED and -employed / 365.25 > age - 14:
-                raise ValueError("Years employed cannot be more than age minus 14.")
+                raise ImpossibleChange("Years employed cannot be more than age minus 14.")
 
         rebuilt = application_features_from_raw(
             raw.reset_index().assign(TARGET=np.nan, is_test=1))

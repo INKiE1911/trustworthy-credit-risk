@@ -47,39 +47,6 @@ class QuantileClipper(OneToOneFeatureMixin, TransformerMixin, BaseEstimator):
         return np.clip(np.asarray(X, dtype=float), self.low_, self.high_)  # NaN stays NaN
 
 
-def make_linear_preprocessor(numeric, cat_low, cat_high, seed: int = 42) -> ColumnTransformer:
-    """For logistic regression, Naive Bayes, KNN, SVM, MLP.
-
-    numbers: cap outliers -> median imputation + missing flags -> standard scaling
-    small text columns: one-hot; large text columns: target encoding (cross-fitted)
-    """
-    numbers = Pipeline([
-        ("clip", QuantileClipper()),
-        ("impute", SimpleImputer(strategy="median", add_indicator=True)),
-        ("scale", StandardScaler()),
-    ])
-    small_text = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
-    large_text = Pipeline([
-        ("target", make_target_encoder(seed)),
-        ("scale", StandardScaler()),
-    ])
-    return ColumnTransformer(
-        [("num", numbers, list(numeric)), ("low", small_text, list(cat_low)),
-         ("high", large_text, list(cat_high))],
-        remainder="drop",
-    )
-
-
-def make_tree_preprocessor(numeric, categorical) -> ColumnTransformer:
-    """For scikit-learn trees: numbers pass through (trees handle NaN), text -> integer codes."""
-    codes = OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1,
-                           encoded_missing_value=-2)
-    return ColumnTransformer(
-        [("num", "passthrough", list(numeric)), ("cat", codes, list(categorical))],
-        remainder="drop",
-    )
-
-
 # --- column pickers that look at the data at fit time (used after feature selection) ---
 def numeric_columns(X) -> list:
     return [c for c in X.columns if not isinstance(X[c].dtype, pd.CategoricalDtype)]
@@ -99,30 +66,33 @@ def text_columns(X) -> list:
     return [c for c in X.columns if isinstance(X[c].dtype, pd.CategoricalDtype)]
 
 
-def make_linear_preprocessor_auto(seed: int = 42) -> ColumnTransformer:
-    """Same as make_linear_preprocessor, but finds the column types itself at fit time.
+def make_linear_preprocessor(numeric=numeric_columns, cat_low=small_text_columns,
+                             cat_high=large_text_columns, seed: int = 42) -> ColumnTransformer:
+    """For logistic regression, Naive Bayes, KNN, SVM, MLP.
 
-    Use it after a feature-selection step, when the kept columns are only known during fit.
+    numbers: cap outliers -> median imputation + missing flags -> standard scaling
+    small text columns: one-hot; large text columns: target encoding (cross-fitted)
+    Columns are lists, or pickers that choose them at fit time (the defaults: use them after a
+    feature-selection step, when the kept columns are only known during fit).
     """
     numbers = Pipeline([
         ("clip", QuantileClipper()),
         ("impute", SimpleImputer(strategy="median", add_indicator=True)),
         ("scale", StandardScaler()),
     ])
+    small_text = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
     large_text = Pipeline([("target", make_target_encoder(seed)), ("scale", StandardScaler())])
     return ColumnTransformer(
-        [("num", numbers, numeric_columns),
-         ("low", OneHotEncoder(handle_unknown="ignore", sparse_output=False), small_text_columns),
-         ("high", large_text, large_text_columns)],
+        [("num", numbers, numeric), ("low", small_text, cat_low), ("high", large_text, cat_high)],
         remainder="drop",
     )
 
 
-def make_tree_preprocessor_auto() -> ColumnTransformer:
-    """Same as make_tree_preprocessor, but finds the column types itself at fit time."""
+def make_tree_preprocessor(numeric=numeric_columns, categorical=text_columns) -> ColumnTransformer:
+    """For scikit-learn trees: numbers pass through (trees handle NaN), text -> integer codes."""
     codes = OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1,
                            encoded_missing_value=-2)
     return ColumnTransformer(
-        [("num", "passthrough", numeric_columns), ("cat", codes, text_columns)],
+        [("num", "passthrough", numeric), ("cat", codes, categorical)],
         remainder="drop",
     )

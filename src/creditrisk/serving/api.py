@@ -11,7 +11,14 @@ from functools import lru_cache
 
 from fastapi import FastAPI, HTTPException, Query
 
-from creditrisk.serving.service import Profile, ScoreRequest, ScoreResponse, ScoringService
+from creditrisk.serving.service import (
+    ImpossibleChange,
+    Profile,
+    ScoreRequest,
+    ScoreResponse,
+    ScoringService,
+    UnknownApplicant,
+)
 
 app = FastAPI(
     title="Trustworthy credit risk API",
@@ -44,7 +51,7 @@ def applicants(limit: int = Query(50, ge=1, le=5000)) -> dict:
 def applicant(applicant_id: int) -> Profile:
     try:
         return get_service().profile(applicant_id)
-    except KeyError:
+    except UnknownApplicant:
         raise HTTPException(status_code=404, detail=f"Unknown applicant {applicant_id}") from None
 
 
@@ -52,8 +59,8 @@ def applicant(applicant_id: int) -> Profile:
 def score(request: ScoreRequest) -> ScoreResponse:
     try:
         return get_service().score(request.applicant_id, request.changes)
-    except KeyError:
+    except UnknownApplicant:
         raise HTTPException(status_code=404,
                             detail=f"Unknown applicant {request.applicant_id}") from None
-    except ValueError as error:
+    except ImpossibleChange as error:
         raise HTTPException(status_code=422, detail=str(error)) from None
