@@ -1,0 +1,4 @@
+decision,applicant,"LIME top 5 vs SHAP top 5 (overlap, run 1)",average overlap with SHAP (10 runs),"LIME stability (mean Jaccard of top 5, 10 runs)"
+approve,131322,0.4,0.42,0.615
+refer,112000,0.6,0.64,0.733
+decline,171291,0.8,0.82,0.737

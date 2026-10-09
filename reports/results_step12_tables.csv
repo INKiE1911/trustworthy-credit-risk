@@ -1,0 +1,8 @@
+,features,mean |SHAP| of the table,share
+Application,120,0.6865,0.4674
+Credit bureau,31,0.191,0.13
+Repayment history,22,0.1808,0.1231
+Previous applications,32,0.1774,0.1208
+Credit cards,14,0.1111,0.0756
+POS / cash loans,12,0.0868,0.0591
+Bureau monthly status,9,0.0352,0.024

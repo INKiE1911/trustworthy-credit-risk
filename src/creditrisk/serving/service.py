@@ -278,6 +278,13 @@ class ScoringService:
             model=self.model_name,
         )
 
+    @staticmethod
+    def reason_codes(result: ScoreResponse, top: int = 4) -> list[str]:
+        """Plain sentences for the main reasons the risk is high (Step 12). Lenders must give
+        declined customers their principal reasons ("adverse action notices" in the US)."""
+        return [f"{r.label} is {r.value}, which raised the estimated risk."
+                for r in result.raises_risk[:top]]
+
     def _reason(self, X: pd.DataFrame, j: int, impact: float) -> Reason:
         name = self.columns[j]
         return Reason(feature=name, label=feature_label(name), value=format_value(X.iloc[0, j]),

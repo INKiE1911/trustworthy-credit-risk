@@ -183,3 +183,28 @@ def test_streamlit_app_runs(served, monkeypatch):
     assert not app.exception
     assert "points" in app.metric[0].delta  # the what-if score is compared with the original
     st.cache_resource.clear()
+
+
+def test_reason_codes_are_sentences_for_the_risk_raising_reasons(served):
+    service, _, _, _ = served
+    result = service.score(service.applicant_ids[3])
+    codes = service.reason_codes(result, top=2)
+    assert len(codes) == min(2, len(result.raises_risk))
+    pairs = zip(codes, result.raises_risk[:2], strict=True)
+    assert all(c.startswith(r.label) and c.endswith(".") for c, r in pairs)
+
+
+def test_counterfactuals_search_the_actionable_fields(served):
+    from creditrisk.explain.counterfactual import counterfactuals
+
+    service, _, _, _ = served
+    applicant_id = service.applicant_ids[5]
+    assert counterfactuals(service, applicant_id, target=1.0) == []  # already below: nothing to do
+    assert all(r["factor"] is None for r in counterfactuals(service, applicant_id, target=0.0))
+    current = service.profile(applicant_id).current
+    before = service.score(applicant_id).probability
+    for r in counterfactuals(service, applicant_id, target=before):
+        if r["factor"] is not None:  # a change was found: it really gets below the target
+            assert r["probability"] < before
+            field = "income" if r["option"] == "higher income" else "loan_amount"
+            assert r["changes"][field] == pytest.approx(current[field] * r["factor"])

@@ -6,7 +6,7 @@ An end-to-end loan-default model on the **Home Credit Default Risk** data (307,5
 applications, 7 linked tables), built to be accurate *and* honest: every number comes with a
 confidence interval, and the system explains each score. PRML course project, IIT Dharwad (2026).
 
-> **Status:** work in progress (Step 11 of 18). All numbers below are 5-fold cross-validation
+> **Status:** work in progress (Step 12 of 18). All numbers below are 5-fold cross-validation
 > on the 60% training split. The 20% test split stays locked until the final evaluation.
 
 ![The demo app](reports/figures/app_screenshot.png)
@@ -59,6 +59,10 @@ ladder used the features from before a small fix (it moved LightGBM by +0.001).
   refers or declines with a promise: at most 10% of real defaulters auto-approved and at most
   10% of good customers auto-declined (9.3% and 9.9% on held-out data). The price: 47% of
   applicants go to a human. One shared cut-off would have auto-approved **82% of defaulters**.
+- **Explanations, checked:** half the model's evidence comes from loan history (53% of
+  |SHAP|). LIME agrees with SHAP on only 2 to 4 of the top 5 reasons and changes between runs,
+  so the app uses exact TreeSHAP. For declined applicants, **borrowing less** gets 78% out of
+  the decline zone (median 35% less); a higher income works for only 21%.
 - **Bugs caught by checking the data:** counting split payments row by row said 67% of
   installments were underpaid (per installment it was 0%), and a "365243" date code had
   quietly emptied two features.
@@ -96,7 +100,7 @@ improve them (Step 10).
              -> model ladder -> experiments -> tuned LightGBM -> API + app
 ```
 
-**Still to come:** reason codes and counterfactuals, a fairness audit with
+**Still to come:** a fairness audit with
 mitigation, clustering, the one-time test-set evaluation, Docker and drift monitoring.
 
 ## Run it yourself
