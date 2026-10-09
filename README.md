@@ -1,5 +1,7 @@
 # Trustworthy Credit Risk Scoring
 
+[![CI](https://github.com/INKiE1911/trustworthy-credit-risk/actions/workflows/ci.yml/badge.svg)](https://github.com/INKiE1911/trustworthy-credit-risk/actions/workflows/ci.yml)
+
 An end-to-end loan-default model on the **Home Credit Default Risk** data (307,511 real loan
 applications, 7 linked tables), built to be accurate *and* honest: every number comes with a
 confidence interval, and the system explains each score. PRML course project, IIT Dharwad (2026).

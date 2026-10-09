@@ -1,6 +1,7 @@
 .venv/
 /data/
 CLAUDE.md
+PROJECT_PLAN_*.md
 mlruns/
 mlflow.db
 __pycache__/
