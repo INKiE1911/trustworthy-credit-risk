@@ -1,5 +1,7 @@
 """Preprocessing pipelines. They are fitted inside each CV fold, so nothing leaks."""
 
+import warnings
+
 import numpy as np
 import pandas as pd
 import sklearn
@@ -33,7 +35,8 @@ class QuantileClipper(OneToOneFeatureMixin, TransformerMixin, BaseEstimator):
             self.feature_names_in_ = np.asarray(X.columns, dtype=object)
         X = np.asarray(X, dtype=float)
         self.n_features_in_ = X.shape[1]
-        with np.errstate(all="ignore"):
+        with np.errstate(all="ignore"), warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)  # all-empty columns are handled below
             low = np.nanquantile(X, self.lower, axis=0) if len(X) else np.full(X.shape[1], np.nan)
             high = np.nanquantile(X, self.upper, axis=0) if len(X) else np.full(X.shape[1], np.nan)
         self.low_ = np.where(np.isnan(low), -np.inf, low)  # all-empty column: no capping

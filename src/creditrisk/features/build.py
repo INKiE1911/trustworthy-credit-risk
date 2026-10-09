@@ -80,6 +80,10 @@ def build_features(verbose: bool = True, read=None) -> pd.DataFrame:
         gc.collect()
 
     features = add_cross_table_features(features)
+    useless = [c for c in features.columns
+               if c not in KEY_COLS and features[c].nunique(dropna=True) <= 1]
+    if useless and verbose:
+        print(f"WARNING: columns with no information (empty or constant): {useless}")
     assert len(features) == n_rows and features["SK_ID_CURR"].is_unique
     assert not features.columns.duplicated().any(), "duplicate column names"
     return shrink(features)

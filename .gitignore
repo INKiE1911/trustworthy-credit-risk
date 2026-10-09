@@ -9,3 +9,5 @@ __pycache__/
 *.zip
 *.egg-info/
 build/
+models/*.joblib
+models/*.txt

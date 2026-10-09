@@ -109,8 +109,8 @@ def test_previous_features(previous):
     assert f.loc[1, "PREV_REFUSED_SHARE"] == pytest.approx(0.5)
     assert f.loc[1, "PREV_ASK_TO_GIVEN_MEAN"] == pytest.approx(1000 / 800)  # approved only
     assert f.loc[1, "PREV_TOTAL_COST_MEAN"] == pytest.approx(100 * 10 / 800 - 1)
-    assert f.loc[1, "PREV_RUNNING_COUNT"] == 1  # DAYS_LAST_DUE is in the future
-    assert f.loc[2, "PREV_RUNNING_COUNT"] == 0  # only 365243 says "future" -> not running
+    assert f.loc[1, "PREV_RUNNING_COUNT"] == 1  # no end date yet (365243)
+    assert f.loc[2, "PREV_RUNNING_COUNT"] == 1  # 365243 = has not ended yet = still running
     assert f.loc[1, "PREV_LAST_REFUSED"] == 1  # most recent application was refused
     assert f.loc[1, "PREV_YEARS_SINCE_LAST"] == pytest.approx(50 / 365.25)
     assert f.loc[2, "PREV_HIGH_YIELD_SHARE"] == 1 and f.loc[2, "PREV_REVOLVING_SHARE"] == 1
@@ -208,3 +208,11 @@ def test_attach_keeps_rows_fills_counts_and_flags():
     assert out["T_COUNT"].tolist() == [2, 0, 5]
     assert np.isnan(out.loc[1, "T_MEAN"])
     assert out["T_HAS_HISTORY"].tolist() == [1, 0, 1]
+
+
+def test_previous_loan_that_ended_is_not_running(previous):
+    ended = previous.iloc[[3]].assign(SK_ID_PREV=5, SK_ID_CURR=3, DAYS_TERMINATION=-100.0,
+                                      DAYS_LAST_DUE=-120.0)
+    f = build_previous_features(pd.concat([previous, ended], ignore_index=True))
+    assert f.loc[3, "PREV_RUNNING_COUNT"] == 0
+    assert np.isnan(f.loc[3, "PREV_RUNNING_CREDIT_TOTAL"])

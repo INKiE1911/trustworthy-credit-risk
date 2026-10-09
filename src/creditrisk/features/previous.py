@@ -23,12 +23,16 @@ def build_previous_features(previous: pd.DataFrame, drop_duplicates: bool = True
     if drop_duplicates:  # EDA decision: duplicate applications are not counted twice
         keep = (p["FLAG_LAST_APPL_PER_CONTRACT"] == "Y") & (p["NFLAG_LAST_APPL_IN_DAY"] == 1)
         p = p[keep]
+    # In this data a loan that has not ended yet has 365243 in its end-date columns (there are
+    # no future dates), so "still running" must be read BEFORE 365243 is turned into NaN.
+    not_ended = (p["DAYS_TERMINATION"] == 365243) | (p["DAYS_LAST_DUE"] == 365243)
     for col in DAYS_WITH_365243:
         p[col] = p[col].where(p[col] != 365243)
 
     status = p["NAME_CONTRACT_STATUS"]
     approved, refused = status == "Approved", status == "Refused"
-    running = approved & ((p["DAYS_TERMINATION"] > 0) | (p["DAYS_LAST_DUE"] > 0))
+    future_end = (p["DAYS_TERMINATION"] > 0) | (p["DAYS_LAST_DUE"] > 0)
+    running = approved & (not_ended | future_end)
     p = p.assign(
         is_approved=approved,
         is_refused=refused,
