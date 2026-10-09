@@ -39,7 +39,16 @@ def build_application_features(train: pd.DataFrame, test: pd.DataFrame) -> pd.Da
     and the feature columns, all prefixed APP_.
     """
     df = pd.concat([train.assign(is_test=0), test.assign(is_test=1)], ignore_index=True)
+    return application_features_from_raw(df)
 
+
+def application_features_from_raw(df: pd.DataFrame) -> pd.DataFrame:
+    """The same cleaning and features for any rows that already have TARGET and is_test.
+
+    Every step works row by row, so this also serves one applicant at a time: the app uses it
+    to recompute the features after a what-if change, with exactly the training code.
+    """
+    df = df.copy()
     # train and test can have different category lists, so rebuild the text columns
     text_cols = [c for c in df.columns if not pd.api.types.is_numeric_dtype(df[c])]
     for col in text_cols:

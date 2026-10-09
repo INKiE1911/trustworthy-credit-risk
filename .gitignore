@@ -1,5 +1,6 @@
 .venv/
-data/
+/data/
+CLAUDE.md
 mlruns/
 mlflow.db
 __pycache__/
