@@ -6,7 +6,7 @@ An end-to-end loan-default model on the **Home Credit Default Risk** data (307,5
 applications, 7 linked tables), built to be accurate *and* honest: every number comes with a
 confidence interval, and the system explains each score. PRML course project, IIT Dharwad (2026).
 
-> **Status:** work in progress (Step 16 of 18). The models are final: the 20% test split was
+> **Status:** work in progress (Step 17 of 18). The models are final: the 20% test split was
 > opened once, in Step 15, and nothing changed after it.
 
 ![The demo app](reports/figures/app_screenshot.png)
@@ -157,7 +157,9 @@ improve them (Step 10).
              -> SHAP reasons, counterfactuals, fairness audit -> API + app (Docker) + PSI monitor
 ```
 
-**Still to come:** the report and the slides.
+**Report:** [`reports/report.pdf`](reports/report.pdf) (IEEE format, explained from first principles; `make report`).
+**Live demo:** https://trustworthy-credit-risk-rchtsc9esc5kj5mvuq86kb.streamlit.app/ (made-up applicants, stand-in model).
+**Still to come:** the slides.
 
 ## Run it yourself
 

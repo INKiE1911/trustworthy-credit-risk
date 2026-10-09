@@ -2,7 +2,7 @@
 # The lines under each target MUST start with a Tab, not spaces.
 
 .PHONY: data parquet parquet-force splits features test lint format mlflow demo-data \
-        demo-data-synthetic api app docker docker-real
+        demo-data-synthetic api app docker docker-real report
 
 DEMO = data/processed/demo_applicants.parquet
 
@@ -62,3 +62,11 @@ docker-real: models/lightgbm_final.joblib demo/demo_synthetic.parquet
 
 demo/demo_synthetic.parquet:
 	.venv/bin/python -m creditrisk.serving.demo --synthetic
+
+# Step 17: the report -> reports/report.pdf (needs pdflatex + bibtex)
+report:
+	.venv/bin/python reports/report/system_diagram.py
+	cd reports/report && pdflatex -interaction=nonstopmode -halt-on-error report.tex >/dev/null \
+		&& bibtex report >/dev/null && pdflatex -interaction=nonstopmode report.tex >/dev/null \
+		&& pdflatex -interaction=nonstopmode -halt-on-error report.tex | grep -E "Warning|Output"
+	cp reports/report/report.pdf reports/report.pdf

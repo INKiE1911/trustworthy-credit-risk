@@ -13,3 +13,10 @@ __pycache__/
 build/
 models/*.joblib
 models/*.txt
+# LaTeX build files (the PDF is copied to reports/report.pdf)
+reports/report/*.aux
+reports/report/*.log
+reports/report/*.bbl
+reports/report/*.blg
+reports/report/*.out
+reports/report/report.pdf
