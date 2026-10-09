@@ -6,7 +6,7 @@ An end-to-end loan-default model on the **Home Credit Default Risk** data (307,5
 applications, 7 linked tables), built to be accurate *and* honest: every number comes with a
 confidence interval, and the system explains each score. PRML course project, IIT Dharwad (2026).
 
-> **Status:** work in progress (Step 12 of 18). All numbers below are 5-fold cross-validation
+> **Status:** work in progress (Step 13 of 18). All numbers below are 5-fold cross-validation
 > on the 60% training split. The 20% test split stays locked until the final evaluation.
 
 ![The demo app](reports/figures/app_screenshot.png)
@@ -63,6 +63,12 @@ ladder used the features from before a small fix (it moved LightGBM by +0.001).
   |SHAP|). LIME agrees with SHAP on only 2 to 4 of the top 5 reasons and changes between runs,
   so the app uses exact TreeSHAP. For declined applicants, **borrowing less** gets 78% out of
   the decline zone (median 35% less); a higher income works for only 21%.
+- **Fairness, measured and traded off:** good customers are wrongly declined at 12.6% for men
+  vs 8.3% for women, and 18% under 30 vs 3% at 60+. Gender is not an input, yet the other
+  features predict it with ROC-AUC 0.91. With different base rates no rule can be fair in every
+  sense at once (shown with the real numbers). Reweighing cuts the gender gap from 4.3 to 1.7
+  points for 0.1% of profit, at the cost of calibration within gender. See the
+  [model card](reports/model_card.md) and [datasheet](reports/datasheet.md).
 - **Bugs caught by checking the data:** counting split payments row by row said 67% of
   installments were underpaid (per installment it was 0%), and a "365243" date code had
   quietly emptied two features.
@@ -100,8 +106,7 @@ improve them (Step 10).
              -> model ladder -> experiments -> tuned LightGBM -> API + app
 ```
 
-**Still to come:** a fairness audit with
-mitigation, clustering, the one-time test-set evaluation, Docker and drift monitoring.
+**Still to come:** clustering, the one-time test-set evaluation, Docker and drift monitoring.
 
 ## Run it yourself
 
@@ -133,11 +138,12 @@ the final model to `models/`). Then `make app`.
 
 ```
 src/creditrisk/   data/  features/  models/  evaluation/  scratch/  serving/
+                  decision/  explain/  fairness/
 app/              the Streamlit page
-notebooks/        01-07, one per step, each ending with key facts and findings
+notebooks/        01-11, one per step, each ending with key facts and findings
 tests/            unit tests, including every scratch algorithm vs scikit-learn
-reports/          result tables and figures
+reports/          result tables, figures, model card, datasheet
 ```
 
 **Tech:** Python, pandas, scikit-learn, LightGBM, XGBoost, PyTorch, Optuna, MLflow, FastAPI,
-Pydantic, Streamlit.
+Pydantic, Streamlit, LIME, Fairlearn.
