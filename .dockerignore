@@ -1,12 +1,12 @@
 # Allow-list: only these go into the image. Never the data/ folder (real Kaggle rows).
+# The real model (models/) is only copied when built with --build-arg MODEL_DIR=models.
 *
-!requirements-app.txt
 !pyproject.toml
 !configs/
 !src/
 !app/
+!demo/
 !models/lightgbm_final.joblib
 !models/lightgbm_final.json
 !models/decision.json
-!demo/demo_synthetic.parquet
 **/__pycache__

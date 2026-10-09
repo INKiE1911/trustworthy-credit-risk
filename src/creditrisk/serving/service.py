@@ -14,13 +14,12 @@ decline) and the money break-even threshold (Step 10).
 import json
 import math
 import os
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field
 
-from creditrisk.config import get_path
+from creditrisk.config import PROJECT_ROOT, get_path
 from creditrisk.decision.conformal import decide
 from creditrisk.features.application import application_features_from_raw
 from creditrisk.features.build import add_cross_table_features
@@ -227,13 +226,15 @@ class ScoringService:
     """Loads the final model and the demo bundle once; then scores applicants quickly."""
 
     def __init__(self, model_dir=None, demo_path=None):
-        model_dir = model_dir or os.environ.get("CREDITRISK_MODEL_DIR")
-        demo_path = Path(demo_path or os.environ.get("CREDITRISK_DEMO_PATH")
-                         or get_path("processed") / DEMO_FILE)
+        # relative paths are from the project root, wherever the app is started
+        model_dir = PROJECT_ROOT / (model_dir or os.environ.get("CREDITRISK_MODEL_DIR")
+                                    or MODEL_DIR)
+        demo_path = PROJECT_ROOT / (demo_path or os.environ.get("CREDITRISK_DEMO_PATH")
+                                    or get_path("processed") / DEMO_FILE)
         if not demo_path.exists():
             raise FileNotFoundError(f"{demo_path} not found. Run `make demo-data` first.")
         self.model, self.details = load_final_model(model_dir)
-        decision = json.loads((Path(model_dir or MODEL_DIR) / "decision.json").read_text())
+        decision = json.loads((model_dir / "decision.json").read_text())
         self.cutoffs = decision["conformal"]
         self.break_even = decision["threshold"]
         self.columns = list(self.details["features"])
@@ -243,8 +244,10 @@ class ScoringService:
         self.features = bundle.drop(columns=raw_columns)
         self.applicant_ids = [int(i) for i in bundle.index]
         self.synthetic = bool(bundle.get("DEMO_SYNTHETIC", pd.Series([False])).any())
-        self.model_name = (f"LightGBM, {self.details.get('n_estimators')} trees, "
-                           f"5-fold CV ROC-AUC {self.details.get('cv_roc_auc')}")
+        self.demo_model = bool(self.details.get("demo_model", False))
+        self.model_name = self.details.get("description") or (
+            f"LightGBM, {self.details.get('n_estimators')} trees, "
+            f"5-fold CV ROC-AUC {self.details.get('cv_roc_auc')}")
 
     def _rows(self, applicant_id: int) -> tuple[pd.DataFrame, pd.DataFrame]:
         if applicant_id not in self.features.index:

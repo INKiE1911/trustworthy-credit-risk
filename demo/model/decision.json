@@ -1,0 +1,13 @@
+{
+  "note": "Stand-in LightGBM trained on made-up applicants (not the real model)",
+  "margin": 0.1,
+  "lgd": 0.5,
+  "threshold": 0.16666666666666669,
+  "conformal": {
+    "alpha": 0.1,
+    "q_repay": 0.18454572314434367,
+    "q_default": 0.9713054011172338,
+    "approve_below": 0.028694598882766154,
+    "decline_above": 0.18454572314434367
+  }
+}

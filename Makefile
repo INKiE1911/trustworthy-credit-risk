@@ -2,7 +2,7 @@
 # The lines under each target MUST start with a Tab, not spaces.
 
 .PHONY: data parquet parquet-force splits features test lint format mlflow demo-data \
-        demo-data-synthetic api app docker
+        demo-data-synthetic api app docker docker-real
 
 DEMO = data/processed/demo_applicants.parquet
 
@@ -52,9 +52,13 @@ api: $(DEMO)
 app: $(DEMO)
 	.venv/bin/streamlit run app/streamlit_app.py --server.headless true
 
-# Step 16: the image with the final model and the made-up demo applicants
+# Step 16: the image. Default: stand-in model + made-up applicants (safe to share).
 docker: demo/demo_synthetic.parquet
 	docker build -t creditrisk-demo .
+
+# The real model inside, for this machine only: never push this image anywhere.
+docker-real: models/lightgbm_final.joblib demo/demo_synthetic.parquet
+	docker build --build-arg MODEL_DIR=models -t creditrisk-real .
 
 demo/demo_synthetic.parquet:
 	.venv/bin/python -m creditrisk.serving.demo --synthetic

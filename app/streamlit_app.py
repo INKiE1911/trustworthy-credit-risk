@@ -5,18 +5,28 @@ Run from the project root:  make app   (or: streamlit run app/streamlit_app.py)
 
 It scores in-process with exactly the same code as the API. Set SCORING_API_URL
 (for example http://localhost:8000) to send every request to the FastAPI service instead.
+The public demo (Streamlit Community Cloud) sets CREDITRISK_MODEL_DIR=demo/model and
+CREDITRISK_DEMO_PATH=demo/demo_synthetic.parquet: a stand-in model and made-up applicants.
 """
 
 import os
 import random
+import sys
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 import streamlit as st
 
-from creditrisk.explain.counterfactual import next_decision
-from creditrisk.serving.service import Changes, ImpossibleChange, ScoringService, format_value
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))  # hosts without pip -e .
+from creditrisk.explain.counterfactual import next_decision  # noqa: E402
+from creditrisk.serving.service import (  # noqa: E402
+    Changes,
+    ImpossibleChange,
+    ScoringService,
+    format_value,
+)
 
 API_URL = os.environ.get("SCORING_API_URL", "").rstrip("/")
 
@@ -64,8 +74,17 @@ def get_counterfactuals(applicant_id: int) -> dict:
     return next_decision(get_service(), applicant_id)
 
 
-def is_synthetic() -> bool:
-    return _get("/health").get("synthetic", False) if API_URL else get_service().synthetic
+@st.cache_resource
+def service_info() -> dict:
+    """Made-up applicants? Stand-in model? Asked once, it never changes while running."""
+    if API_URL:
+        health = _get("/health")
+        return {k: health.get(k, False) for k in ("synthetic", "demo_model")}
+    service = get_service()
+    return {"synthetic": service.synthetic, "demo_model": service.demo_model}
+
+
+info = service_info()
 
 
 ids = list_applicants()
@@ -76,7 +95,7 @@ with st.sidebar:
     st.header("Applicant")
     st.button("🎲 Random applicant",
               on_click=lambda: st.session_state.update(applicant=random.choice(ids)))
-    source = "made-up applicants" if is_synthetic() else "Kaggle test file"
+    source = "made-up applicants" if info["synthetic"] else "Kaggle test file"
     applicant_id = st.selectbox(f"Applicant ID ({source})", ids, key="applicant")
     profile = get_profile(applicant_id)
     current = profile["current"]
@@ -125,9 +144,12 @@ except ImpossibleChange as error:
     st.error(f"These values are not possible: {error}")
     st.stop()
 
-who = ("Made-up applicants (no real data)" if is_synthetic()
+who = ("Made-up applicants (no real data)" if info["synthetic"]
        else "Real applicants from the Kaggle test file, so no outcome is known")
-st.caption(f"{result['model']}. {who}. Probabilities are calibrated (checked on the test split).")
+quality = ("It shows how the system works; the real model's results are in the project README"
+           if info["demo_model"] else "Probabilities are calibrated (checked on the test split)")
+st.caption(f"{result['model']}. {who}. {quality}.")
+TESTED = "" if info["demo_model"] else " (9.8% on the test split)"
 
 decision = result["decision"]
 BADGE = {"approve": "✅ Approve", "refer": "🟡 Refer to a person", "decline": "⛔ Decline"}
@@ -183,14 +205,14 @@ with decision_tab:
     outcome, p = decision["outcome"], result["probability"]
     text = {
         "approve": f"The risk ({p:.1%}) is below {decision['approve_below']:.2%}: approved "
-                   "automatically. At most about 10% of real defaulters end up here (9.8% on "
-                   "the test split).",
+                   "automatically. At most about 10% of real defaulters end up here"
+                   f"{TESTED}.",
         "refer": f"The risk ({p:.1%}) is between {decision['approve_below']:.2%} and "
                  f"{decision['decline_above']:.2%}: the model is not sure enough either way, so "
-                 "a person decides. About 47% of applicants land here.",
+                 "a person decides.",
         "decline": f"The risk ({p:.1%}) is above {decision['decline_above']:.2%}: declined "
-                   "automatically. At most about 10% of good customers end up here (9.8% on "
-                   "the test split).",
+                   "automatically. At most about 10% of good customers end up here"
+                   f"{TESTED}.",
     }[outcome]
     {"approve": st.success, "refer": st.warning, "decline": st.error}[outcome](
         f"**{BADGE[outcome]}.** {text}")

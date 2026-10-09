@@ -112,9 +112,22 @@ picks an applicant and has three tabs:
   external scores) in the sidebar, or let the model find the smallest smaller-loan or
   higher-income change that reaches the next better decision.
 
-Features are rebuilt with exactly the training code. Locally the applicants are **real
-applicants from the Kaggle test file** (no outcome is known). The Docker image uses **made-up
-applicants** instead, because the competition rules forbid sharing the data.
+Features are rebuilt with exactly the training code. Locally the app uses the real model and
+**real applicants from the Kaggle test file** (no outcome is known). Neither leaves this
+machine: the competition rules forbid sharing the data. The **public demo** and the default
+Docker image use **made-up applicants and a stand-in model trained only on made-up data**
+(`demo/`), so they show how the system works, not the real model's accuracy.
+
+**Public demo on Streamlit Community Cloud** (free; deploys straight from GitHub):
+
+1. On share.streamlit.io choose *Create app*, this repository, branch `main`, main file
+   `app/streamlit_app.py`; under *Advanced settings* pick Python 3.12.
+2. Paste these secrets (they become environment variables):
+   ```toml
+   CREDITRISK_MODEL_DIR = "demo/model"
+   CREDITRISK_DEMO_PATH = "demo/demo_synthetic.parquet"
+   ```
+3. Deploy. Dependencies come from `app/requirements.txt` and `app/packages.txt`.
 
 ```bash
 make app     # Streamlit page at http://localhost:8501 (builds the demo data on first run)
@@ -171,7 +184,9 @@ the final model to `models/`). Then `make app`.
 | `make lint` | Check the code |
 | `make mlflow` | Open the experiment dashboard |
 | `make demo-data` | Rebuild the app's demo applicants (real, local only) |
-| `make docker` | Build the image (final model + made-up applicants) |
+| `make demo-data-synthetic` | Rebuild the made-up applicants and the stand-in model (`demo/`) |
+| `make docker` | Build the shareable image (stand-in model + made-up applicants) |
+| `make docker-real` | Build an image with the real model, for this machine only |
 | `docker compose up` | Run the app (port 8501) and the API (port 8000) together |
 
 ## Project layout
@@ -180,7 +195,7 @@ the final model to `models/`). Then `make app`.
 src/creditrisk/   data/  features/  models/  evaluation/  scratch/  serving/
                   decision/  explain/  fairness/  monitoring/
 app/              the Streamlit page
-demo/             made-up demo applicants (safe to share)
+demo/             made-up applicants and a stand-in model (safe to share)
 notebooks/        01-14, one per step, each ending with key facts and findings
 tests/            unit tests, including every scratch algorithm vs scikit-learn
 reports/          result tables, figures, model card, datasheet

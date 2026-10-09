@@ -250,3 +250,16 @@ def test_synthetic_bundle_has_no_real_applicants():
     assert len(bundle) == 20 and bundle["DEMO_SYNTHETIC"].all()
     assert bundle["SK_ID_CURR"].min() >= 900_000           # outside the real Kaggle id range
     assert sum(c.startswith(RAW_PREFIX) for c in bundle.columns) == 120
+
+
+def test_stand_in_model_serves_made_up_applicants(tmp_path):
+    from creditrisk.serving.demo import make_synthetic_bundle, make_synthetic_model
+
+    decision = make_synthetic_model(tmp_path, n=2_000, seed=1)
+    cut = decision["conformal"]
+    assert 0 < cut["approve_below"] < cut["decline_above"] < 1
+    make_synthetic_bundle(n=20, seed=3).to_parquet(tmp_path / "demo.parquet", index=False)
+    service = ScoringService(model_dir=tmp_path, demo_path=tmp_path / "demo.parquet")
+    assert service.demo_model and service.synthetic and "made-up" in service.model_name
+    result = service.score(service.applicant_ids[0])
+    assert result.decision.approve_below == pytest.approx(cut["approve_below"], abs=1e-4)

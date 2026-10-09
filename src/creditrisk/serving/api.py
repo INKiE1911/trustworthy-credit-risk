@@ -44,7 +44,8 @@ def get_service() -> ScoringService:
 def health() -> dict:
     service = get_service()
     return {"status": "ok", "model": service.model_name,
-            "applicants": len(service.applicant_ids), "synthetic": service.synthetic}
+            "applicants": len(service.applicant_ids), "synthetic": service.synthetic,
+            "demo_model": service.demo_model}
 
 
 @app.get("/applicants")
