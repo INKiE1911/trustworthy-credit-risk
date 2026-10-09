@@ -11,5 +11,14 @@
     "defaulters declined": 0.4452,
     "good customers declined": 0.0975,
     "profit (millions)": 1144.1754
+  },
+  "conformal": {
+    "step": 11,
+    "alpha": 0.1,
+    "q_repay": 0.16552342365471562,
+    "q_default": 0.9645328635615452,
+    "approve_below": 0.03546713643845478,
+    "decline_above": 0.16552342365471562,
+    "fitted_on": "conformal split, 30,751 rows"
   }
 }
