@@ -24,7 +24,7 @@ app = FastAPI(
     title="Trustworthy credit risk API",
     version="0.1.0",
     description="Default probability and reasons for real (unlabelled) Home Credit applicants. "
-                "Probabilities are not calibrated yet (Step 10).",
+                "Probabilities are calibrated (checked in Step 10).",
 )
 
 

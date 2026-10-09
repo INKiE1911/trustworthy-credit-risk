@@ -190,7 +190,7 @@ class Reason(BaseModel):
 
 class ScoreResponse(BaseModel):
     applicant_id: int
-    probability: float = Field(description="Predicted probability of default (not yet calibrated)")
+    probability: float = Field(description="Predicted probability of default (calibrated, Step 10)")
     times_average: float = Field(description="probability ÷ the average default rate")
     average_default_rate: float
     base_probability: float = Field(description="The model's prediction for a typical applicant")

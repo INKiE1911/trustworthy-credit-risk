@@ -1,0 +1,15 @@
+{
+  "step": 10,
+  "calibration": "none",
+  "fitted_on": "validation split, 30,751 rows",
+  "margin": 0.1,
+  "lgd": 0.5,
+  "threshold": 0.166667,
+  "validation": {
+    "threshold": 0.1667,
+    "approval rate": 0.8744,
+    "defaulters declined": 0.4452,
+    "good customers declined": 0.0975,
+    "profit (millions)": 1144.1754
+  }
+}

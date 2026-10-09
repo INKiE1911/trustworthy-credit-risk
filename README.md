@@ -6,7 +6,7 @@ An end-to-end loan-default model on the **Home Credit Default Risk** data (307,5
 applications, 7 linked tables), built to be accurate *and* honest: every number comes with a
 confidence interval, and the system explains each score. PRML course project, IIT Dharwad (2026).
 
-> **Status:** work in progress (Step 9 of 18). All numbers below are 5-fold cross-validation
+> **Status:** work in progress (Step 10 of 18). All numbers below are 5-fold cross-validation
 > on the 60% training split. The 20% test split stays locked until the final evaluation.
 
 ![The demo app](reports/figures/app_screenshot.png)
@@ -49,6 +49,12 @@ ladder used the features from before a small fix (it moved LightGBM by +0.001).
   Laplace Bayesian version, Naive Bayes, PCA, Fisher LDA, K-means++, GMM with EM, an MLP with
   backprop) written in NumPy match scikit-learn; K-means and EM from the same start give
   identical answers, and the MLP gradient check error is 2e-7.
+- **Already calibrated; a money rule beats a fixed cut-off:** Platt and isotonic scaling did not
+  improve the probabilities (average 8.03% vs 8.07% actual). Approving when
+  p < margin / (margin + loss) (0.167 for a 10% margin and 50% loss) earns **13% more** than
+  approving everyone on the validation split, within 0.3% of the best threshold found by
+  search. Within gender it is off: men are under-predicted (9.3% vs 10.4%) and women
+  over-predicted (7.4% vs 6.9%), a problem for the fairness step.
 - **Bugs caught by checking the data:** counting split payments row by row said 67% of
   installments were underpaid (per installment it was 0%), and a "365243" date code had
   quietly emptied two features.
@@ -74,7 +80,8 @@ curl -X POST localhost:8000/score -H "Content-Type: application/json" \
 
 The response has the probability, how it compares with the average applicant (8.1%), and the
 top 4 reasons pushing the risk up and down. Input is validated (for example, external scores
-must be between 0 and 1). Probabilities are not calibrated yet; that is the next step.
+must be between 0 and 1). The probabilities are calibrated: Platt and isotonic scaling did not
+improve them (Step 10).
 
 ## How it is built
 
@@ -85,9 +92,9 @@ must be between 0 and 1). Probabilities are not calibrated yet; that is the next
              -> model ladder -> experiments -> tuned LightGBM -> API + app
 ```
 
-**Still to come:** calibration and a money-based approval threshold, a conformal
+**Still to come:** a conformal
 approve / refer / decline layer, reason codes and counterfactuals, a fairness audit with
-mitigation, clustering, the one-time test-set evaluation, Docker, CI and drift monitoring.
+mitigation, clustering, the one-time test-set evaluation, Docker and drift monitoring.
 
 ## Run it yourself
 

@@ -1,0 +1,4 @@
+,ROC-AUC,Brier,log loss,ECE,ECE (equal-size bins),avg predicted p,actual default rate
+none,0.79306,0.06529,0.2348,0.00236,0.00359,0.08028,0.08071
+sigmoid,0.79304,0.0653,0.2348,0.0017,0.00282,0.08071,0.08071
+isotonic,0.79075,0.06534,0.237,0.00121,0.00298,0.08075,0.08071

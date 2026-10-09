@@ -112,7 +112,7 @@ except ImpossibleChange as error:
     st.stop()
 
 st.caption(f"{result['model']}. Real applicants from the Kaggle test file, so no outcome is "
-           "known. Probabilities are not calibrated yet (that comes in Step 10).")
+           "known. Probabilities are calibrated (checked in Step 10).")
 
 left, middle, right = st.columns(3)
 delta = (f"{(result['probability'] - original['probability']) * 100:+.1f} points vs. their own "

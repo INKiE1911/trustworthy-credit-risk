@@ -1,0 +1,4 @@
+rule,threshold,approval rate,defaulters declined,good customers declined,profit (millions)
+break-even (formula),0.1667,0.8744,0.4452,0.0975,1144.1754
+best on validation,0.185,0.8941,0.4025,0.0798,1147.3925
+approve everyone,1.0,1.0,0.0,0.0,1011.4552
