@@ -6,12 +6,27 @@ An end-to-end loan-default model on the **Home Credit Default Risk** data (307,5
 applications, 7 linked tables), built to be accurate *and* honest: every number comes with a
 confidence interval, and the system explains each score. PRML course project, IIT Dharwad (2026).
 
-> **Status:** work in progress (Step 14 of 18). All numbers below are 5-fold cross-validation
-> on the 60% training split. The 20% test split stays locked until the final evaluation.
+> **Status:** work in progress (Step 15 of 18). The models are final: the 20% test split was
+> opened once, in Step 15, and nothing changed after it.
 
 ![The demo app](reports/figures/app_screenshot.png)
 
-## Results so far
+## Final results (test split, 61,502 applicants, used once)
+
+| Model | Test ROC-AUC | 95% CI | 5-fold CV |
+|---|---|---|---|
+| **Tuned LightGBM (final model)** | **0.790** | 0.784–0.797 | 0.790 |
+| LightGBM, reweighed for gender fairness | 0.790 | 0.784–0.797 | |
+| EBM (glass-box model) | 0.781 | 0.774–0.788 | 0.776 |
+| Logistic regression | 0.778 | 0.771–0.785 | 0.776 |
+| WoE scorecard (30 features, points table) | 0.757 | 0.751–0.765 | 0.755 |
+
+Test matches CV for every model. LightGBM ranks significantly better than all three reference
+models (paired bootstrap, Holm-corrected). On the approve/decline decisions it beats only
+logistic regression significantly. On test, the money rule earns **13.9% more** than approving
+everyone, and the conformal layer auto-approves **9.8%** of defaulters (the promise was 10%).
+
+## Model comparison (5-fold cross-validation, train split)
 
 | Model | 5-fold CV ROC-AUC | 95% CI |
 |---|---|---|
@@ -73,6 +88,10 @@ ladder used the features from before a small fix (it moved LightGBM by +0.001).
   "the default rate of my cluster" ranks risk at ROC-AUC 0.50–0.55 for K-means, GMM, Ward and
   HDBSCAN. Clustering the declined applicants by their **SHAP values** works better: three risk
   personas (low external scores, a maxed-out credit card, borderline), each with its own story.
+- **The test split agreed with everything:** AUC, calibration, profit, the conformal coverage
+  (0.902 for both classes) and the fairness gaps all repeat their validation values. One thing
+  got worse: by age, the approval ratio is 0.796, just under the "80% rule". More data would
+  still help LightGBM (its learning curve is still rising) but not logistic regression.
 - **Bugs caught by checking the data:** counting split payments row by row said 67% of
   installments were underpaid (per installment it was 0%), and a "365243" date code had
   quietly emptied two features.
@@ -110,7 +129,7 @@ improve them (Step 10).
              -> model ladder -> experiments -> tuned LightGBM -> API + app
 ```
 
-**Still to come:** the one-time test-set evaluation, Docker and drift monitoring.
+**Still to come:** app v2 (decision, reasons, what-if), Docker and drift monitoring.
 
 ## Run it yourself
 
@@ -144,7 +163,7 @@ the final model to `models/`). Then `make app`.
 src/creditrisk/   data/  features/  models/  evaluation/  scratch/  serving/
                   decision/  explain/  fairness/
 app/              the Streamlit page
-notebooks/        01-12, one per step, each ending with key facts and findings
+notebooks/        01-13, one per step, each ending with key facts and findings
 tests/            unit tests, including every scratch algorithm vs scikit-learn
 reports/          result tables, figures, model card, datasheet
 ```
